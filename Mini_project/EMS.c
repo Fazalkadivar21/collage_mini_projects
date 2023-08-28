@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
+
 
 #define MAX_EMPLOYEES 100
 
@@ -42,7 +44,7 @@ void writeEmployeesToFile(const Employee* employees, int numEmployees, const cha
         perror("Error opening file");
         return;
     }
-
+    
     fwrite(employees, sizeof(Employee), numEmployees, file);
     fclose(file);
 }
@@ -104,6 +106,23 @@ int isValidEmail(const char* email) {
     return strchr(email, '@') != NULL;
 }
 
+// Function to delete an employee by ID
+void deleteEmployeeByID(Employee* employees, int* numEmployees, int targetID) {
+    for (int i = 0; i < *numEmployees; i++) {
+        if (employees[i].empID == targetID) {
+            // Shift remaining employees to cover the deleted position
+            for (int j = i; j < *numEmployees - 1; j++) {
+                employees[j] = employees[j + 1];
+            }
+            (*numEmployees)--;
+            printf("Employee with ID %d deleted.\n", targetID);
+            return;
+        }
+    }
+    printf("Employee with ID %d not found.\n", targetID);
+}
+
+
 int main() {
     Employee employees[MAX_EMPLOYEES];
     int numEmployees = 0;
@@ -113,13 +132,14 @@ int main() {
 
     int choice;
     do {
-        printf("Welcome to FN co. EMS : \n");
+        printf("\nWelcome to FN co. EMS : \n");
         printf("1. Add Employee\n");
         printf("2. Search Employee\n");
         printf("3. Sort Employees\n");
         printf("4. Display All Employees\n");
-        printf("5. Exit\n");
-        printf("Enter your choice: ");
+        printf("5. Delete Employee\n");
+        printf("6. Exit\n");
+        printf("\nEnter your choice: ");
         scanf("%d", &choice);
         getchar(); // consume the newline character left by scanf
 
@@ -131,7 +151,7 @@ int main() {
                     Employee newEmployee;
                     printf("Enter Employee ID: ");
                     if (scanf("%d", &newEmployee.empID) != 1) {
-                        printf("Invalid input. Please enter a valid employee ID.\n");
+                        printf("\nInvalid input. Please enter a valid employee ID.\n");
                         getchar(); // consume the remaining characters from the buffer
                         break;
                     }
@@ -152,21 +172,32 @@ int main() {
                     }
                     getchar(); // consume the newline character left by scanf
 
-                    printf("Enter Phone Number (or Email): ");
+                    printf("Enter Phone Number: ");
                     if (fgets(newEmployee.contact.phone, sizeof(newEmployee.contact.phone), stdin) == NULL) {
                         printf("Error reading input.\n");
                         exit(1);
                     }
                     newEmployee.contact.phone[strcspn(newEmployee.contact.phone, "\n")] = '\0'; // remove newline character
 
-                    // Validate phone number or email
-                    if (!isValidPhoneNumber(newEmployee.contact.phone) && !isValidEmail(newEmployee.contact.phone)) {
-                        printf("Invalid phone number or email address. Please enter a valid contact.\n");
+                    if (!isValidPhoneNumber(newEmployee.contact.phone)) {
+                        printf("Invalid phone number. Please enter a valid contact.\n");
+                        break;
+                    }
+
+                    printf("Enter Email: ");
+                    if (fgets(newEmployee.contact.email, sizeof(newEmployee.contact.email), stdin) == NULL) {
+                        printf("Error reading input.\n");
+                        exit(1);
+                    }
+                    newEmployee.contact.email[strcspn(newEmployee.contact.email, "\n")] = '\0'; // remove newline character
+
+                    if (!isValidEmail(newEmployee.contact.email)) {
+                        printf("Invalid email address. Please enter a valid contact.\n");
                         break;
                     }
 
                     employees[numEmployees++] = newEmployee;
-                    printf("Employee added successfully!\n");
+                    printf("\nEmployee added successfully!\n\nDon't forget to choose exit to save all your data and close the program properly.\n");
                 }
                 break;
             }
@@ -176,10 +207,10 @@ int main() {
                 scanf("%d", &searchID);
                 Employee* result = searchEmployeeByID(employees, numEmployees, searchID);
                 if (result != NULL) {
-                    printf("Employee found:\n");
+                    printf("\nEmployee found:\n");
                     printEmployee(result);
                 } else {
-                    printf("Employee not found.\n");
+                    printf("\nEmployee not found.\n");
                 }
                 break;
             }
@@ -189,20 +220,30 @@ int main() {
                 break;
             }
             case 4: {
-                printf("All Employees:\n");
+                printf("\nAll Employees:\n");
                 for (int i = 0; i < numEmployees; i++) {
                     printEmployee(&employees[i]);
                 }
                 break;
             }
             case 5: {
-                // Write employees' data to the file before exiting
-                writeEmployeesToFile(employees, numEmployees, "employees.dat");
-                printf("Exiting the program.\n");
+                int deleteID;
+                printf("Enter Employee ID to delete: ");
+                scanf("%d", &deleteID);
+                getchar(); // Consume newline
+            
+                deleteEmployeeByID(employees, &numEmployees, deleteID);
                 break;
             }
+            case 6: {
+                // Write employees' data to the file before exiting
+                writeEmployeesToFile(employees, numEmployees, "employees.dat");
+                printf("\nExiting the program.\n");
+                break;
+            }
+
             default:
-                printf("Invalid choice. Please try again.\n");
+                printf("\nInvalid choice. Please try again.\n");
         }
     } while (choice != 5);
 

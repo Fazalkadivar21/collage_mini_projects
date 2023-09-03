@@ -19,7 +19,7 @@ jobs:
       - name: Build C Code
         run: |
           gcc -o EMS EMS.c
-        working-directory: path/to/your/code
+        working-directory: Mini_project/EMS.c
 
       - name: Run Tests
         run: |

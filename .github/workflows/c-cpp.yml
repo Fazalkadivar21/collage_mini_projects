@@ -1,0 +1,27 @@
+name: C Code CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build C Code
+        run: |
+          gcc -o EMS EMS.c
+        working-directory: path/to/your/code
+
+      - name: Run Tests
+        run: |
+          ./EMS
+        working-directory: Mini_project/EMS.c

@@ -1,249 +1,156 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
-
-#define MAX_EMPLOYEES 100
-
-// Define a union to store different contact information
-typedef union {
-    char phone[11];
-    char email[50];
+// Define a structure for contact information
+typedef struct {
+    char phone[12]; // Allow for 11 digits plus '\0'
+    char email[51]; // Allow for 50 characters plus '\0'
 } ContactInfo;
 
-// Define a structure to represent an employee
+// Define a structure for an employee
 typedef struct {
     int empID;
-    char name[50];
+    char name[51]; // Allow for 50 characters plus '\0'
     double salary;
     ContactInfo contact;
 } Employee;
 
-// Function to read employee data from the file
-int readEmployeesFromFile(Employee* employees, const char* filename) {
-    FILE* file = fopen(filename, "rb");
-    if (file == NULL) {
-        perror("Error opening file");
-        return 0;
+// Function to add an employee
+void addEmployee(Employee** employees, int* numEmployees) {
+    Employee newEmployee;
+    printf("Enter Employee ID: ");
+    scanf("%d", &newEmployee.empID);
+    printf("Enter Employee Name: ");
+    scanf(" %50s", newEmployee.name);
+    printf("Enter Salary: ");
+    scanf("%lf", &newEmployee.salary);
+    printf("Enter Phone Number: ");
+    scanf(" %11s", newEmployee.contact.phone);
+    printf("Enter Email: ");
+    scanf(" %50s", newEmployee.contact.email);
+
+    // Allocate memory for the new employee
+    *employees = realloc(*employees, (*numEmployees + 1) * sizeof(Employee));
+    if (*employees == NULL) {
+        printf("Memory allocation failed.\n");
+        exit(1);
     }
 
-    int numEmployees = 0;
-    while (fread(&employees[numEmployees], sizeof(Employee), 1, file) == 1) {
-        numEmployees++;
-    }
+    // Add the new employee to the array
+    (*employees)[*numEmployees] = newEmployee;
+    (*numEmployees)++;
 
-    fclose(file);
-    return numEmployees;
-}
-
-// Function to write employee data to the file
-void writeEmployeesToFile(const Employee* employees, int numEmployees, const char* filename) {
-    FILE* file = fopen(filename, "wb");
-    if (file == NULL) {
-        perror("Error opening file");
-        return;
-    }
-    
-    fwrite(employees, sizeof(Employee), numEmployees, file);
-    fclose(file);
-}
-
-// Function to print employee information
-void printEmployee(const Employee* emp) {
-    printf("Employee ID: %d\n", emp->empID);
-    printf("Name: %s\n", emp->name);
-    printf("Salary: %.2f\n", emp->salary);
-    printf("Contact: %s\n", emp->contact.phone[0] != '\0' ? emp->contact.phone : emp->contact.email);
-    printf("--------------------------\n");
+    printf("Employee added successfully!\n");
 }
 
 // Function to search for an employee by ID
-Employee* searchEmployeeByID(Employee* employees, int numEmployees, int targetID) {
+void searchEmployee(const Employee* employees, int numEmployees, int targetID) {
     for (int i = 0; i < numEmployees; i++) {
         if (employees[i].empID == targetID) {
-            return &employees[i];
-        }
-    }
-    return NULL;
-}
-
-// Function to sort employees by ID using bubble sort
-void sortEmployeesByID(Employee* employees, int numEmployees) {
-    for (int i = 0; i < numEmployees - 1; i++) {
-        for (int j = 0; j < numEmployees - i - 1; j++) {
-            if (employees[j].empID > employees[j + 1].empID) {
-                Employee temp = employees[j];
-                employees[j] = employees[j + 1];
-                employees[j + 1] = temp;
-            }
-        }
-    }
-}
-
-// Function to check if a given string is a valid phone number
-int isValidPhoneNumber(const char* phone) {
-    // In this example, we are assuming that a valid phone number
-    // should contain only digits and must have 10 characters.
-    size_t len = strlen(phone);
-    if (len != 10) {
-        return 0;
-    }
-
-    for (size_t i = 0; i < len; i++) {
-        if (!isdigit(phone[i])) {
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-// Function to check if a given string is a valid email address
-int isValidEmail(const char* email) {
-    // In this example, we are assuming that a valid email address
-    // should contain '@' character.
-    return strchr(email, '@') != NULL;
-}
-
-// Function to delete an employee by ID
-void deleteEmployeeByID(Employee* employees, int* numEmployees, int targetID) {
-    for (int i = 0; i < *numEmployees; i++) {
-        if (employees[i].empID == targetID) {
-            // Shift remaining employees to cover the deleted position
-            for (int j = i; j < *numEmployees - 1; j++) {
-                employees[j] = employees[j + 1];
-            }
-            (*numEmployees)--;
-            printf("Employee with ID %d deleted.\n", targetID);
+            printf("Employee found:\n");
+            printf("Employee ID: %d\n", employees[i].empID);
+            printf("Name: %s\n", employees[i].name);
+            printf("Salary: %.2f\n", employees[i].salary);
+            printf("Phone: %s\n", employees[i].contact.phone);
+            printf("Email: %s\n", employees[i].contact.email);
             return;
         }
     }
     printf("Employee with ID %d not found.\n", targetID);
 }
 
+// Function to display all employees
+void displayEmployees(const Employee* employees, int numEmployees) {
+
+    if (numEmployees == 0) {
+        printf("No data found.\n");
+        return;
+    }
+    
+    printf("\nAll Employees:\n");
+    for (int i = 0; i < numEmployees; i++) {
+        printf("Employee ID: %d\n", employees[i].empID);
+        printf("Name: %s\n", employees[i].name);
+        printf("Salary: %.2f\n", employees[i].salary);
+        printf("Phone: %s\n", employees[i].contact.phone);
+        printf("Email: %s\n", employees[i].contact.email);
+        printf("--------------------------\n");
+    }
+}
+
+// Function to delete an employee by ID
+void deleteEmployee(Employee** employees, int* numEmployees, int targetID) {
+    int found = 0;
+    for (int i = 0; i < *numEmployees; i++) {
+        if ((*employees)[i].empID == targetID) {
+            // Shift remaining employees to cover the deleted position
+            for (int j = i; j < *numEmployees - 1; j++) {
+                (*employees)[j] = (*employees)[j + 1];
+            }
+            (*numEmployees)--;
+            found = 1;
+            printf("Employee with ID %d deleted.\n", targetID);
+            break;
+        }
+    }
+    if (!found) {
+        printf("Employee with ID %d not found.\n", targetID);
+    }
+
+    // Reallocate memory to adjust the array size
+    *employees = realloc(*employees, (*numEmployees) * sizeof(Employee));
+    if (*employees == NULL && *numEmployees > 0) {
+        printf("Memory reallocation failed.\n");
+        exit(1);
+    }
+}
+
+// Function to free memory allocated for employees
+void freeEmployees(Employee** employees, int* numEmployees) {
+    free(*employees);
+    *employees = NULL;
+    *numEmployees = 0;
+}
 
 int main() {
-    Employee employees[MAX_EMPLOYEES];
+    Employee* employees = NULL;
     int numEmployees = 0;
+    int choice, empID;
 
-    // Read employees' data from the file (if exists)
-    numEmployees = readEmployeesFromFile(employees, "employees.dat");
-
-    int choice;
     do {
-        printf("\nWelcome to FN co. EMS : \n");
+        printf("\nWelcome to Employee Management System:\n");
         printf("1. Add Employee\n");
         printf("2. Search Employee\n");
-        printf("3. Sort Employees\n");
-        printf("4. Display All Employees\n");
-        printf("5. Delete Employee\n");
-        printf("6. Exit\n");
-        printf("\nEnter your choice: ");
+        printf("3. Display All Employees\n");
+        printf("4. Delete Employee\n");
+        printf("5. Exit\n");
+        printf("Enter your choice: ");
         scanf("%d", &choice);
-        getchar(); // consume the newline character left by scanf
 
         switch (choice) {
-            case 1: {
-                if (numEmployees >= MAX_EMPLOYEES) {
-                    printf("Maximum number of employees reached.\n");
-                } else {
-                    Employee newEmployee;
-                    printf("Enter Employee ID: ");
-                    if (scanf("%d", &newEmployee.empID) != 1) {
-                        printf("\nInvalid input. Please enter a valid employee ID.\n");
-                        getchar(); // consume the remaining characters from the buffer
-                        break;
-                    }
-                    getchar(); // consume the newline character left by scanf
-
-                    printf("Enter Employee Name: ");
-                    if (fgets(newEmployee.name, sizeof(newEmployee.name), stdin) == NULL) {
-                        printf("Error reading input.\n");
-                        exit(1);
-                    }
-                    newEmployee.name[strcspn(newEmployee.name, "\n")] = '\0'; // remove newline character
-
-                    printf("Enter Salary: ");
-                    if (scanf("%lf", &newEmployee.salary) != 1) {
-                        printf("Invalid input. Please enter a valid salary.\n");
-                        getchar(); // consume the remaining characters from the buffer
-                        break;
-                    }
-                    getchar(); // consume the newline character left by scanf
-
-                    printf("Enter Phone Number: ");
-                    if (fgets(newEmployee.contact.phone, sizeof(newEmployee.contact.phone), stdin) == NULL) {
-                        printf("Error reading input.\n");
-                        exit(1);
-                    }
-                    newEmployee.contact.phone[strcspn(newEmployee.contact.phone, "\n")] = '\0'; // remove newline character
-
-                    if (!isValidPhoneNumber(newEmployee.contact.phone)) {
-                        printf("Invalid phone number. Please enter a valid contact.\n");
-                        break;
-                    }
-
-                    printf("Enter Email: ");
-                    if (fgets(newEmployee.contact.email, sizeof(newEmployee.contact.email), stdin) == NULL) {
-                        printf("Error reading input.\n");
-                        exit(1);
-                    }
-                    newEmployee.contact.email[strcspn(newEmployee.contact.email, "\n")] = '\0'; // remove newline character
-
-                    if (!isValidEmail(newEmployee.contact.email)) {
-                        printf("Invalid email address. Please enter a valid contact.\n");
-                        break;
-                    }
-
-                    employees[numEmployees++] = newEmployee;
-                    printf("\nEmployee added successfully!\n\nDon't forget to choose exit to save all your data and close the program properly.\n");
-                }
+            case 1:
+                addEmployee(&employees, &numEmployees);
                 break;
-            }
-            case 2: {
-                int searchID;
+            case 2:
                 printf("Enter Employee ID to search: ");
-                scanf("%d", &searchID);
-                Employee* result = searchEmployeeByID(employees, numEmployees, searchID);
-                if (result != NULL) {
-                    printf("\nEmployee found:\n");
-                    printEmployee(result);
-                } else {
-                    printf("\nEmployee not found.\n");
-                }
+                scanf("%d", &empID);
+                searchEmployee(employees, numEmployees, empID);
                 break;
-            }
-            case 3: {
-                sortEmployeesByID(employees, numEmployees);
-                printf("Employees sorted by ID.\n");
+            case 3:
+                displayEmployees(employees, numEmployees);
                 break;
-            }
-            case 4: {
-                printf("\nAll Employees:\n");
-                for (int i = 0; i < numEmployees; i++) {
-                    printEmployee(&employees[i]);
-                }
-                break;
-            }
-            case 5: {
-                int deleteID;
+            case 4:
                 printf("Enter Employee ID to delete: ");
-                scanf("%d", &deleteID);
-                getchar(); // Consume newline
-            
-                deleteEmployeeByID(employees, &numEmployees, deleteID);
+                scanf("%d", &empID);
+                deleteEmployee(&employees, &numEmployees, empID);
                 break;
-            }
-            case 6: {
-                // Write employees' data to the file before exiting
-                writeEmployeesToFile(employees, numEmployees, "employees.dat");
-                printf("\nExiting the program.\n");
+            case 5:
+                freeEmployees(&employees, &numEmployees);
+                printf("Exiting the program.\n");
                 break;
-            }
-
             default:
-                printf("\nInvalid choice. Please try again.\n");
+                printf("Invalid choice. Please try again.\n");
         }
     } while (choice != 5);
 
